@@ -12,7 +12,7 @@ from selenium.webdriver.support import expected_conditions as EC
 JSD60_URL = f"http://{config('LOCAL_IP')}"
 CGI_URL = f"{JSD60_URL}/dynamic.cgi"
 EXPECTED_BUTTON_NUM = "2"
-MINIMUM_FADER_LEVEL = 3.9
+MINIMUM_FADER_LEVEL = 38
 
 
 def get_jsd_status():
@@ -57,7 +57,7 @@ def click_button2_with_selenium():
 
 def increase_volume_with_selenium(current_fader, target_fader=3.9):
     """Click 'Fader Up' the number of times needed to reach the target level."""
-    steps_needed = int((target_fader - current_fader) / 0.10)
+    steps_needed = int(target_fader - current_fader)
 
     if steps_needed <= 0:
         print("✅ Volume already at or above target.")
@@ -94,12 +94,20 @@ def main():
     print(f"🎯 Current ButtonNum: {button_num}")
     print(f"🎚️  CurrentFader: {current_fader:.2f}")
 
+    # Step 1: Switch channel if needed
     if button_num != EXPECTED_BUTTON_NUM:
         print("⚠️ Not on Button 2 — correcting it with Selenium...")
         click_button2_with_selenium()
+
+        # 🔁 Re-fetch status after switching channel
+        time.sleep(5)  # optional wait to let state update
+        status = get_jsd_status()
+        current_fader = status["CurrentFader"]
+        print(f"🔄 Re-fetched CurrentFader: {current_fader:.2f}")
     else:
         print("✅ Already on Button 2 — no action needed.")
 
+    # Step 2: Check fader and increase if needed
     if current_fader < MINIMUM_FADER_LEVEL:
         increase_volume_with_selenium(current_fader, MINIMUM_FADER_LEVEL)
     else:
